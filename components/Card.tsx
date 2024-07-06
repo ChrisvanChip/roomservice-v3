@@ -4,9 +4,9 @@ export function Card({ children }: { children: React.ReactNode }) {
         <View
             style={{
                 backgroundColor: "white",
-                padding: 4,
                 borderRadius: 8,
                 margin: 16,
+                flexDirection: "row",
             }}
         >
             {children}
