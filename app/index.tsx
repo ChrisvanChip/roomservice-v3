@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { StyleSheet, View, Text, TouchableOpacity, TextInput } from "react-native";
+import { router } from 'expo-router';
 import {
   useFonts,
   Inter_400Regular,
@@ -17,8 +18,21 @@ function Untitled() {
   });
 
   const [roomPIN, setPIN] = useState('');
+  const [error, setError] = useState('');
   const onChanged = (text: string) => {
     setPIN(text.replace(/[^0-9]/g, ''))
+  }
+  const onPress = () => {
+    if (error) {
+      setPIN('');
+      setError('');
+      return;
+    }
+    if (roomPIN.length === 6) {
+      router.push('caller/' + roomPIN);
+    } else {
+      setError('PIN must be 6 digits');
+    }
   }
   if (fontsLoaded) {
     return (
@@ -26,10 +40,11 @@ function Untitled() {
         <Text style={styles.header}>Roomservice</Text>
         <View style={styles.rect}>
           <View style={styles.input}>
-            <TextInput maxLength={6} value={roomPIN} onChangeText={onChanged} keyboardType='numeric' style={styles.roomPin} placeholder="Room PIN"></TextInput>
+            {!error && <TextInput id="roomPin" maxLength={6} value={roomPIN} onChangeText={onChanged} keyboardType='numeric' style={styles.roomPin} placeholder="Room PIN"></TextInput>}
+            {error && <TextInput onPress={onPress} showSoftInputOnFocus={false} style={styles.roomPinError} value={error}></TextInput>}
           </View>
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.joinRoom}>Join Room</Text>
+          <TouchableOpacity onPress={onPress} style={[styles.button, { backgroundColor: error ? "rgba(228, 92, 86,1)" : "rgba(86,92,228,1)" }]}>
+            <Text style={styles.joinRoom}>{!error ? 'Join Room' : '<- Retry'}</Text>
           </TouchableOpacity>
         </View>
         <View style={styles.footerButton}>
@@ -77,6 +92,13 @@ const styles = StyleSheet.create({
     textAlign: "center",
     flex: 1
   },
+  roomPinError: {
+    fontFamily: "Inter_700Bold",
+    color: "rgba(255,59,48,1)",
+    fontSize: 14,
+    textAlign: "center",
+    flex: 1
+  },
   button: {
     width: 253,
     height: 41,
@@ -87,7 +109,7 @@ const styles = StyleSheet.create({
     marginBottom: 11
   },
   joinRoom: {
-    fontFamily: "Inter_400Regular",
+    fontFamily: "Inter_600SemiBold",
     color: "rgba(255,255,255,1)",
     marginTop: 12,
     marginLeft: 92
