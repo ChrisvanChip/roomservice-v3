@@ -20,7 +20,7 @@ function Untitled() {
     if (fontsLoaded) {
         return (
             <View style={styles.container}>
-                <Text>Manager: Room {id}</Text>
+                <Text style={{ fontSize: 24, color: "#fff" }}>Manager: Room {id}</Text>
             </View>
         );
     }

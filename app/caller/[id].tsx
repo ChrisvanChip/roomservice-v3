@@ -20,8 +20,8 @@ function Untitled() {
     if (fontsLoaded) {
         return (
             <View style={styles.container}>
-                <Text>Caller: Room {id}</Text>
-            </View>
+                <Text style={{ fontSize: 24, color: "#fff" }}>Caller: Room {id}</Text>
+            </View >
         );
     }
 }

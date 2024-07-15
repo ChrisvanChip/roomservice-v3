@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { StyleSheet, View, Text, TouchableOpacity, TextInput } from "react-native";
 import { router } from 'expo-router';
+import { post, get, isAxiosError } from '../utils/api';
 import {
   useFonts,
   Inter_400Regular,
@@ -8,6 +9,7 @@ import {
   Inter_600SemiBold,
   Inter_700Bold,
 } from '@expo-google-fonts/inter';
+import { AxiosError } from "axios";
 
 function Untitled() {
   let [fontsLoaded] = useFonts({
@@ -17,22 +19,64 @@ function Untitled() {
     Inter_700Bold,
   });
 
+
   const [roomPIN, setPIN] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const [backgroundColorButton] = useMemo(() => {
+    if (loading) return ["rgba(171,174,242,1)"];
+    if (error) return ["rgba(228, 92, 86,1)"];
+    return [`rgba(86,92,228,1)`];
+  }, [error, loading]);
+
   const onChanged = (text: string) => {
     setPIN(text.replace(/[^0-9]/g, ''))
   }
-  const onPress = () => {
+  const joinRoom = async () => {
+    setLoading(true)
+
     if (error) {
       setPIN('');
       setError('');
+      setLoading(false);
       return;
     }
+
     if (roomPIN.length === 6) {
-      router.push('caller/' + roomPIN);
+      try {
+        await get('rooms/' + roomPIN)
+        router.push('caller/' + roomPIN);
+      } catch (reason) {
+        if (isAxiosError(reason)) {
+          if (reason.response?.status === 404) {
+            setError('Room not found');
+          } else {
+            setError(reason.message);
+          }
+        } else {
+          setError(reason as string);
+        }
+      }
     } else {
       setError('PIN must be 6 digits');
     }
+
+    setLoading(false);
+  }
+  const createRoom = async () => {
+    setLoading(true)
+    try {
+      const response = await post('rooms/create', {})
+      router.push('server/' + response.data.joinToken);
+    } catch (reason) {
+      if (isAxiosError(reason)) {
+        setError(reason.message);
+      } else {
+        setError(reason as string);
+      }
+    }
+    setLoading(false);
   }
   if (fontsLoaded) {
     return (
@@ -41,17 +85,19 @@ function Untitled() {
         <View style={styles.rect}>
           <View style={styles.input}>
             {!error && <TextInput id="roomPin" maxLength={6} value={roomPIN} onChangeText={onChanged} keyboardType='numeric' style={styles.roomPin} placeholder="Room PIN"></TextInput>}
-            {error && <TextInput onPress={onPress} showSoftInputOnFocus={false} style={styles.roomPinError} value={error}></TextInput>}
+            {error && <TextInput onPress={joinRoom} showSoftInputOnFocus={false} style={styles.roomPinError} value={error}></TextInput>}
           </View>
-          <TouchableOpacity onPress={onPress} style={[styles.button, { backgroundColor: error ? "rgba(228, 92, 86,1)" : "rgba(86,92,228,1)" }]}>
+          <TouchableOpacity disabled={loading} onPress={joinRoom} style={[styles.button, { backgroundColor: backgroundColorButton }]}>
             <Text style={styles.joinRoom}>{!error ? 'Join Room' : '<- Retry'}</Text>
           </TouchableOpacity>
         </View>
-        <View style={styles.footerButton}>
-          <TouchableOpacity style={styles.button2}>
-            <Text style={styles.createRoom}>Create Room</Text>
-          </TouchableOpacity>
-        </View>
+        {!error &&
+          <View style={styles.footerButton}>
+            <TouchableOpacity onPress={createRoom} style={styles.button2}>
+              <Text style={styles.createRoom}>Create Room</Text>
+            </TouchableOpacity>
+          </View>
+        }
       </View>
     );
   }
